@@ -291,7 +291,7 @@ class edaNetUI:
 		if __name__ == "__main__":
 			ui.txtFilename = apw.Butt('Test', mf, 0, 0, 0)
 		else:
-			ui.txtFilename = apw.Label(u'Drag file to log view or use „Open” button →',
+			ui.txtFilename = apw.Label(u'Drag *.net file to log view or use „Open” button →',
 				mf, 0, 0, 0, xalign=0., selectable=True)
 		ui.buttonSelectFile = ui.apw.Butt(None, mf, 0, 0, 30, stockID=gtk.STOCK_OPEN)
 		ui.buttonSelectFile.set_tooltip_text('Select File')
