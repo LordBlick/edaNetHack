@@ -268,7 +268,7 @@ class edaNetUI:
 		from gobject import TYPE_STRING as goStr, TYPE_INT as goInt, TYPE_PYOBJECT as goPyObj
 		apw = ui.apw
 		ui.version = .2
-		ui.title = "PCBnew python module based Panelizator v.%0.2f. For BZR>5161" % ui.version
+		ui.title = "KiCAD netlist brokening v.%0.2f." % ui.version
 		ui.mainWindow = gtk.Window(gtk.WINDOW_TOPLEVEL)
 		ui.wdhMain, ui.hgtMain, ui.hgtLower = (640, 300, apw.Height+50)
 		ui.mainWindow.set_geometry_hints(
