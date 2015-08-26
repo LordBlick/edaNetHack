@@ -1,110 +1,113 @@
 #!/usr/bin/env python2
-# -*- encoding: utf-8 -*-
 # -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 # -*- tabstop: 4 -*-
 
 #All greetings may go to LordBlick on gmail… ;)
 
 from os import path as ph, rename as mv
+from clIniFile import IniSections, _p, xlist
+from uiNetEDA import gtk, wg
+
 class fixPCB:
-	def __init__(it):
-		it.uiInit()
-		it.pcb = None
-		it.appStart()
+	def __init__(mn):
+		mn.uiInit()
+		mn.pcb = None
+		mn.appStart()
 
-	bkFn = lambda it, fileNameNET: "%s-bkp.%s" % tuple(fileNameNET.rsplit('.', 1))
-	uiFn = lambda it, fileName: fileName.replace(ph.expanduser('~'), '~')
+	bkFn = lambda mn, fileNameNET: "%s-bkp.%s" % tuple(fileNameNET.rsplit('.', 1))
+	uiFn = lambda mn, fileName: fileName.replace(ph.expanduser('~'), '~')
 
-	def uiInit(it):
+	def uiInit(mn):
 		from uiNetEDA import edaNetUI
-		ui = it.ui = edaNetUI()
-		gtk = ui.gtk
+		ui = mn.ui = edaNetUI()
 		gdk = gtk.gdk
-		ui.mainWindow.connect("destroy", lambda xargs: it.Exit())
-		it.TARGET_TYPE_URI_LIST = 80
-		it.lsDragAndDrop = [("text/uri-list", 0, it.TARGET_TYPE_URI_LIST )]
-		ui.logView.connect("drag-data-received", it.dragReceived)
+		ui.mainWindow.connect("destroy", lambda xargs: mn.Exit())
+		#### log set ####
+		mn.TARGET_TYPE_URI_LIST = 80
+		mn.lsDragAndDrop = [("text/uri-list", 0, mn.TARGET_TYPE_URI_LIST )]
+		ui.logView.connect("drag-data-received", mn.dragReceived)
 		ui.logView.drag_dest_set(gtk.DEST_DEFAULT_MOTION|gtk.DEST_DEFAULT_HIGHLIGHT|gtk.DEST_DEFAULT_DROP,
-			it.lsDragAndDrop, gdk.ACTION_COPY)
-		ui.logView.connect("drag-motion", it.dragMotion)
-		ui.buttonSelectFile.connect("clicked", lambda xargs: it.appFileName())
-		ui.buttonAllNetsGlobal.connect("clicked", lambda xargs: it.appGlobNet())
-		ui.buttonRestore.connect("clicked", lambda xargs: it.appRestore())
-		ui.buttonExit.connect("clicked", lambda xargs: it.Exit())
-		it.pr = ui.logView.insert_end
+			mn.lsDragAndDrop, gdk.ACTION_COPY)
+		ui.logView.connect("drag-motion", mn.dragMotion)
+		#### end of log set ####
+		ui.buttonSelectFile.connect("clicked", lambda xargs: mn.appFileName())
+		ui.buttonAllNetsGlobal.connect("clicked", lambda xargs: mn.appGlobNet())
+		ui.buttonRestore.connect("clicked", lambda xargs: mn.appRestore())
+		ui.buttonExit.connect("clicked", lambda xargs: mn.Exit())
+		mn.pr = ui.logView.insert_end
 
-	def appPostUI(it):
-		ui = it.ui
-		gtk = ui.gtk
-		pango = ui.pango
+	def appPostUI(mn):
+		ui = mn.ui
+		from uiNetEDA import pango
 		logBuff = ui.logView.get_buffer()
-		it.tgFindErr = logBuff.create_tag('error', weight = pango.WEIGHT_BOLD, foreground = 'red')
-		it.tgFileName = logBuff.create_tag('filename', weight = pango.WEIGHT_BOLD, foreground = 'yellow')
-		it.tgLineNo = logBuff.create_tag('line_number', weight = pango.WEIGHT_BOLD)
-		it.tgLineNo.set_property('foreground-gdk',  gtk.gdk.Color('#0F0'))
-		it.tgFindLine = logBuff.create_tag('phrase', weight = pango.WEIGHT_BOLD, foreground = 'orange')
-		it.tgFindLine.set_property('background-gdk',  gtk.gdk.Color('#002818'))
-		it.tgFindPhrase = logBuff.create_tag('replace', weight = pango.WEIGHT_BOLD, foreground = 'orange')
-		it.tgFindPhrase.set_property('background-gdk',  gtk.gdk.Color('#580028'))
-		it.tgReplacePhrase = logBuff.create_tag('int_', weight = pango.WEIGHT_BOLD, foreground = 'orange')
-		it.tgReplacePhrase.set_property('background-gdk',  gtk.gdk.Color('#005828'))
+		mn.tgFindErr = logBuff.create_tag('error', weight = pango.WEIGHT_BOLD, foreground = 'red')
+		mn.tgFileName = logBuff.create_tag('filename', weight = pango.WEIGHT_BOLD, foreground = 'yellow')
+		mn.tgLineNo = logBuff.create_tag('line_number', weight = pango.WEIGHT_BOLD)
+		mn.tgLineNo.set_property('foreground-gdk',  gtk.gdk.Color('#0F0'))
+		mn.tgFindLine = logBuff.create_tag('phrase', weight = pango.WEIGHT_BOLD, foreground = 'orange')
+		mn.tgFindLine.set_property('background-gdk',  gtk.gdk.Color('#002818'))
+		mn.tgFindPhrase = logBuff.create_tag('replace', weight = pango.WEIGHT_BOLD, foreground = 'orange')
+		mn.tgFindPhrase.set_property('background-gdk',  gtk.gdk.Color('#580028'))
+		mn.tgReplacePhrase = logBuff.create_tag('int_', weight = pango.WEIGHT_BOLD, foreground = 'orange')
+		mn.tgReplacePhrase.set_property('background-gdk',  gtk.gdk.Color('#005828'))
 
-	def errReport(it, txt):
-		ui = it.ui
+	def errReport(mn, txt):
+		ui = mn.ui
 		ui.logView.insert_end(("Script Version: v.%0.2f. Error report:\n"+txt) % ui.version)
 
-	def appRestore(it):
-		ui = it.ui
-		uif = it.uiFn
-		if it.cfg.has_key('lastNetFile'):
-			fileNameNET = it.cfg['lastNetFile']
-			fileNameBk = it.bkFn(fileNameNET)
+	def appRestore(mn):
+		ui = mn.ui
+		uif = mn.uiFn
+		fileNameNET = mn.cfg['Main']['lastNetFile']
+		if fileNameNET:
+			fileNameBk = mn.bkFn(fileNameNET)
 			if ph.isfile(fileNameBk):
 				mv(fileNameBk, fileNameNET)
 				ui.logView.insert_end("Restored file:\n\t'%s'\nFrom file:\n\t'%s'\n" %\
 					(uif(fileNameNET), uif(fileNameBk)))
-		it.appUpdateFilename()
+		mn.appUpdateFilename()
 
-	def appUpdateFilename(it, bUpEmptyTxt=True):
-		ui = it.ui
-		fileNameNET = it.cfg['lastNetFile'] if (hasattr(it, 'cfg')\
-				and(it.cfg.has_key('lastNetFile'))) else ''
+	def appUpdateFilename(mn, bUpEmptyTxt=True):
+		ui = mn.ui
+		fileNameNET = mn.cfg['Main']['lastNetFile']
 		if bUpEmptyTxt or(fileNameNET):
 			ui.txtFilename.set_text(fileNameNET.replace(ph.expanduser('~'), '~'))
 		bFn = bool(fileNameNET) and(ph.isfile(fileNameNET))
 		ui.buttonAllNetsGlobal.set_sensitive(bFn)
 		if bFn:
-			fileNameBk = it.bkFn(fileNameNET)
+			fileNameBk = mn.bkFn(fileNameNET)
 			bFn = ph.isfile(fileNameBk)
 		ui.buttonRestore.set_sensitive(bFn)
 
-	def appDropFilename(it):
-		it.cfg.pop('lastNetFile')
-		it.appUpdateFilename()
+	def appDropFilename(mn):
+		print("Filename dropped (%s)" % mn.cfg['Main']['lastNetFile'])
+		mn.cfg['Main'].pop('lastNetFile')
+		mn.appUpdateFilename()
 
-	def appGlobNet(it):
-		ui = it.ui
-		uif = it.uiFn
-		if it.cfg.has_key('lastNetFile'):
-			fileNameNET = it.cfg['lastNetFile']
-			fileNameBk = it.bkFn(fileNameNET)
+	def appGlobNet(mn):
+		ui = mn.ui
+		uif = mn.uiFn
+		fileNameNET = mn.cfg['Main']['lastNetFile']
+		if fileNameNET:
+			fileNameBk = mn.bkFn(fileNameNET)
 			uiFn = uif(fileNameNET)
 			if ph.isfile(fileNameNET):
 				hFile = open(fileNameNET, 'r')
 				if not(hFile):
 					for txtslice, cTag in( ("Can't open a file:", 2), ("'", 0), (uif(fileNameNET), 1),("'\n", 0) ):
-						it.pr(txtslice, tag=(None, it.tgFileName, it.tgFindErr)[cTag])
+						mn.pr(txtslice, tag=(None, mn.tgFileName, mn.tgFindErr)[cTag])
 					return
 				data = dataCp = hFile.read()
 				hFile.close()
 				for txtslice, cTag in( ("Readed file:'", 0), (uif(fileNameNET), 1),("'\n", 0) ):
-					it.pr(txtslice, tag=(None, it.tgFileName)[cTag])
+					mn.pr(txtslice, tag=(None, mn.tgFileName)[cTag])
 				import re
 				search, replace = r"(?P<Head>\(net \(code \d+\) \(name \"?)(?P<Delete>/)(?P<Tail>[\(\)\-\w]+\"?\))", "\\g<Head>\\g<Tail>"
 				rexFindIt = re.compile(search, re.U)
 				matchIt = rexFindIt.search(data)
 				if not(matchIt):
-					it.pr(" doesn't contain any hierarchical connections description.\n", tag=it.tgFindErr)
+					mn.pr(" doesn't contain any hierarchical connections description.\n", tag=mn.tgFindErr)
 					return
 				#output = re.sub(rexFindIt, replace, data)
 				bFnd = False
@@ -119,7 +122,7 @@ class fixPCB:
 						continue
 					if not(bFnd):
 						bFnd = True
-						it.pr("Replaced:\n")
+						mn.pr("Replaced:\n")
 					while tmpline:
 						srchB, srchE = lmatch.span()
 						for idp in range(2):
@@ -141,45 +144,43 @@ class fixPCB:
 								slices[idp].append((tmpline, 1))
 							output += tmpline+'\n'
 							break
-					it.pr("Line %3d:\n" % (n+1), tag=it.tgLineNo)
+					mn.pr("Line %3d:\n" % (n+1), tag=mn.tgLineNo)
 					for idp in range(2):
 						for txtslice, cTag in slices[idp]:
 							if txtslice:
-								it.pr(txtslice.decode(codepage, 'ignore'), tag=(None, it.tgFindLine, (it.tgFindPhrase, it.tgReplacePhrase)[idp], it.tgFindErr)[cTag])
-						it.pr('\n')
+								mn.pr(txtslice.decode(codepage, 'ignore'), tag=(None, mn.tgFindLine, (mn.tgFindPhrase, mn.tgReplacePhrase)[idp], mn.tgFindErr)[cTag])
+						mn.pr('\n')
 				if output != dataCp and(not(ui.checkTest.get_active())):
 					mv(fileNameNET, fileNameBk)
 					hFile = open(fileNameNET, 'w')
 					if not(hFile):
 						for txtslice, cTag in( ("Can't write to file:'", 0), (fileNameNET, 1), ("'\n", 0) ):
-							it.pr(txtslice, tag=(it.tgFindErr, it.tgFileName)[cTag])
+							mn.pr(txtslice, tag=(mn.tgFindErr, mn.tgFileName)[cTag])
 						return
 					hFile.write(output)
 					hFile.close()
 					for txtslice, cTag in(
 						("Saved in file:\n\t'", 0), (uif(fileNameNET), 1),
 						("'\nBackup in file:\n\t'", 0), (uif(fileNameBk), 1), ("'\n", 0) ):
-						it.pr(txtslice, tag=(None, it.tgFileName)[cTag])
-					it.appUpdateFilename()
+						mn.pr(txtslice, tag=(None, mn.tgFileName)[cTag])
+					mn.appUpdateFilename()
 				else:
 					for txtslice, cTag in( ("File:'", 0), (uif(fileNameNET), 1), ("' not touched\n", 0) ):
-						it.pr(txtslice, tag=(None, it.tgFileName)[cTag])
+						mn.pr(txtslice, tag=(None, mn.tgFileName)[cTag])
 			else:
 				for txtslice, cTag in( ("Seems that file was deleted:\t'", 0), (uif(fileNameNET), 1), ("'\n", 0) ):
-					it.pr(txtslice, tag=(None, it.tgFileName)[cTag])
+					mn.pr(txtslice, tag=(None, mn.tgFileName)[cTag])
 
-	def appFileName(it):
-		ui = it.ui
-		apw = ui.apw
-		lastNetFile = it.cfg.get('lastNetFile')
-		lastDir = ph.dirname(lastNetFile) if lastNetFile else apw.callDir
-		newFilename = apw.dialogChooseFile(parent=ui.mainWindow,
-			startDir=lastDir, title="Select file to read", bShowHidden=True)
+	def appFileName(mn):
+		lastNetFile = mn.cfg['Main']['lastNetFile']
+		lastDir = ph.dirname(lastNetFile) if lastNetFile else mn.ui.runpath
+		newFilename = wg.dialogChooseFile(parent=mn.ui.mainWindow,
+			startDir=lastDir, filters=(mn.ui.netFilter,), title="Select file to read", bShowHidden=True)
 		if newFilename:
-			it.cfg['lastNetFile'] = newFilename
-		it.appUpdateFilename()
+			mn.cfg['Main']['lastNetFile'] = newFilename
+		mn.appUpdateFilename()
 
-	def uriPath(it, uri):
+	def uriPath(mn, uri):
 		from urllib import url2pathname as u2p
 		"get the path to file"
 		path = ""
@@ -190,68 +191,55 @@ class fixPCB:
 				break
 		return path
 
-	def dragReceived(it, widget, context, x, y, selection, target_type, timestamp):
-		ui = it.ui
-		if target_type == it.TARGET_TYPE_URI_LIST:
+	def dragReceived(mn, widget, context, x, y, selection, target_type, timestamp):
+		if target_type == mn.TARGET_TYPE_URI_LIST:
 			uri = selection.data.strip('\r\n\x00')
-			it.cfg['lastNetFile'] = it.uriPath(uri.split(None, 1)[0])
-			it.appUpdateFilename()
+			mn.cfg['Main']['lastNetFile'] = mn.uriPath(uri.split(None, 1)[0])
+			mn.appUpdateFilename()
 		return True
 
-	def dragMotion(it, widget, context, x, y, timestamp):
-		ui = it.ui
+	def dragMotion(mn, widget, context, x, y, timestamp):
+		ui = mn.ui
 		if not(ui.mainWindow.is_active()):
 			ui.mainWindow.present()
-		gdk = ui.apw.gtk.gdk
+		gdk = wg.gtk.gdk
 		context.drag_status(gdk.ACTION_COPY, timestamp)
 		return True
 
-	def appCfgLoad(it):
-		ui = it.ui
-		it.cfg = {}
-		#cfgFn = it.cfgFileName = ph.normpath("%s/%s.conf" % (cfgPath(), ph.basename(ph.abspath(__file__))))
-		cfgFn = it.cfgFileName = "%s/%s.conf" % (ui.apw.callDir, ph.basename(ph.expanduser(__file__)))
-		print("cfg:%s" % it.uiFn(cfgFn))
-		if ph.isfile(cfgFn):
-			hFileCfg = open(cfgFn, 'r')
-			cfgData = hFileCfg.read()
-			hFileCfg.close()
-			for inputLine in cfgData.splitlines():
-				inputLine = inputLine.strip()
-				if inputLine and ':' in inputLine:
-					name, value = inputLine.split(':', 1)
-					if name=='lastNetFile':
-						value = value.strip()
-					it.cfg[name] = value
-			it.lastcfg = it.cfg.copy()
-		else:
-			it.lastcfg = None
+	def appCfgLoad(mn):
+		ui = mn.ui
+		mn.cfg = IniSections()
+		cfg_fn = mn.ui.runpath+'/'+ ph.basename(__file__)+'.ini'
+		if ph.isfile(cfg_fn):
+			mn.cfg.load(cfg_fn)
+			_p("Config file: '%s'\n" % (cfg_fn))
+		if not(mn.cfg.filename):
+			mn.cfg.filename = cfg_fn
+		mn.lastcfg = mn.cfg['Main'].copy(), mn.cfg['UI'].copy()
+		from dlgEngine import DialogEngine
+		ui.cfg = mn.cfg['UI']
+		ui.dlgEngine = DialogEngine(ui)
+		ui.restoreGeometry()
 
-	def appCfgStore(it, cfgFn):
-		ui = it.ui
-		cfgDir = ph.dirname(cfgFn)
-		from os import makedirs
-		if not(ph.isdir(cfgDir)):
-			makedirs(cfgDir, 0o755)
-		if it.lastcfg!=it.cfg:
-			hFileCfg = open(cfgFn, 'w')
-			for cfg in it.cfg.keys():
-				hFileCfg.write("%s:%s\n" % (cfg, it.cfg[cfg]))
-			hFileCfg.close()
-			print("Written config:%s...\n" % it.uiFn(cfgFn))
+	def appCfgStore(mn):
+		mn.ui.storeGeometry()
+		if mn.lastcfg!=(mn.cfg['Main'], mn.cfg['UI']):
+			mn.cfg.section_place('Main', 0)
+			mn.cfg.store()
+			_p("Written config:%s...\n" % mn.cfg.filename)
 
-	def appStart(it):
-		it.appCfgLoad()
-		it.appUpdateFilename(bUpEmptyTxt=False)
-		it.appPostUI()
-		it.ui.uiEnter()
+	def appStart(mn):
+		mn.appCfgLoad()
+		mn.appUpdateFilename(False)
+		mn.appPostUI()
+		mn.ui.uiEnter()
 
-	appStop = lambda it: it.appCfgStore(it.cfgFileName)
+	appStop = lambda mn: mn.appCfgStore()
 
-	def Exit(it):
+	def Exit(mn):
 		print("Exiting...\n")
-		it.appStop()
-		it.ui.uiExit()
+		mn.appStop()
+		mn.ui.uiExit()
 
 # Entry point
 if __name__ == "__main__":
