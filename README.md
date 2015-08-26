@@ -13,8 +13,13 @@ edaNetHack
 ## Introduction
 
 edaNetHack is a program for easier rename net names to global (without „/”prefixes) in KiCAD netlist file (*.net) by click on „Globalize” button.
+
 By default changes are simulated and displayed in message widget, an can be searched for custom netname. Real changes are done after uncheck „Test Only” checkbox.
 
+Recomended just for one schematic sheet (1 level hierarchy) projects.
+
+## Reason to make this tool
+In the case of a draft single sheet, „/” prefix can be perceived as an inconvenience, which KiCAD project managers do not intend to delete because quite right probability complaints from the less experienced users who after selecting globalization would have a problem with a more complex project.
 
 ## Running initially testing script.
 From command line in dir with script:
